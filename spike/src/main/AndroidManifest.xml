@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+
+    <!-- Android 11+ 패키지 가시성: 토스 설치 여부와 supertoss 스킴 처리 앱 조회 -->
+    <queries>
+        <package android:name="viva.republica.toss" />
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="supertoss" />
+        </intent>
+    </queries>
+
+    <application
+        android:allowBackup="false"
+        android:label="여행짜자 실험"
+        android:usesCleartextTraffic="true"
+        android:theme="@android:style/Theme.Material.Light.NoActionBar">
+        <activity
+            android:name=".SpikeActivity"
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

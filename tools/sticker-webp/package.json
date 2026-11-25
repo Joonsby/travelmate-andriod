@@ -1,0 +1,13 @@
+{
+  "name": "sticker-webp",
+  "private": true,
+  "description": "travelmate-api 의 HEIC 스티커를 Android 용 WebP 로 바꾼다 (투명 배경 보존)",
+  "type": "module",
+  "scripts": {
+    "convert": "node convert.js"
+  },
+  "dependencies": {
+    "heic-decode": "2.1.0",
+    "sharp": "0.35.5"
+  }
+}

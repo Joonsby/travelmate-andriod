@@ -1,0 +1,17 @@
+*.iml
+.gradle/
+.kotlin/
+/local.properties
+/.idea/
+.DS_Store
+build/
+/captures
+.externalNativeBuild
+.cxx
+*.keystore
+*.jks
+google-services.json
+
+# 스티커 변환 도구
+tools/sticker-webp/node_modules/
+tools/sticker-webp/out/
