@@ -251,7 +251,7 @@ feature/profile         내 정보, 설정, 계좌, 신고·차단, 탈퇴
 | 시트 끌어서 닫기 | SheetHeaderDrag 직접 구현 | `ModalBottomSheet`(70% 높이) + `confirmValueChange` 로 확인 대화상자 | |
 | 키보드 | 빈 곳 탭하면 내림 | `imePadding` + 포커스 해제 Modifier | edge-to-edge |
 | 화면 모드 | UserDefaults → colorScheme | `AppCompatDelegate.setApplicationNightMode` 또는 테마 상태 | |
-| 푸시 | 없음 (추가 예정) | FCM, 알림 채널 4개(채팅·공지·일정·경비), `POST_NOTIFICATIONS` 권한(Android 13 이상), 알림을 누르면 해당 채팅방·여행으로 이동 | 9장 참고. 서버 작업이 먼저 끝나야 함 |
+| 푸시 | APNs 직접 발송 (이미 있음) | FCM, 알림 채널 4개(채팅·통화·여행 초대·친구), `POST_NOTIFICATIONS` 권한(Android 13 이상), 알림을 누르면 해당 채팅방·여행·친구 탭으로 이동 | 9장 참고. 서버에 FCM 갈래(9-2)가 먼저 배포돼야 함 |
 
 ---
 
@@ -266,7 +266,7 @@ feature/profile         내 정보, 설정, 계좌, 신고·차단, 탈퇴
 | ③ | Apple 로그인 Services ID 지원(aud 에 따라 client_id 선택, 웹 흐름 redirect 엔드포인트) | 코드 | D1 에 따라 결정 | 기존 흐름을 유지하도록 만들면 영향 없음. 회귀 테스트 필요 |
 | ④ | 스티커 WebP 변환본 3,161개(23.8MB)를 정적 파일로 추가. 변환은 끝났음(`tools/sticker-webp/out`) | 파일 추가 | **필수 (D3 확정)** | 없음. iOS 는 계속 .heic 를 받음 |
 | ⑤ | 업로드 크기 초과가 500 으로 나가는 문제를 413 으로 고침 | 버그 수정 | 선택 | 오류 문구만 정확해짐 |
-| ⑥ | 푸시 발송 기능 (기기 등록 API, 알림 설정 API, 발송) — 9장 | 기능 | **필수 (D2 확정)** | 새 API 를 추가하는 것뿐이라 기존 API 는 그대로입니다. iOS 는 새로 만드는 등록 API 를 호출해야 알림을 받습니다 |
+| ⑥ | 푸시: 기기 등록에 플랫폼 구분 추가, Android 용 FCM 발송기 — 9장 | 기능 | **필수 (D2·D2-1 확정)** | 없음. 플랫폼을 보내지 않는 지금 iOS 요청은 그대로 받고, iOS 는 계속 APNs 로 보냅니다 |
 
 ---
 
@@ -296,7 +296,7 @@ feature/profile         내 정보, 설정, 계좌, 신고·차단, 탈퇴
 |---|---|---|
 | D1 | Apple 로그인을 Android 에서 지원하나요? | **결정(2026-11-25): 1차에서는 숨깁니다.** Apple 로만 가입한 iOS 사용자는 Android 에 들어올 수 없습니다. 계정 연결이나 서버 ③ 작업은 2차에서 다시 검토합니다 |
 | D2 | 푸시 알림을 이번 범위에 넣나요? | **결정(2026-11-25): 1차 범위에 넣습니다.** iOS 에도 넣을 예정이었는데 빠졌던 기능입니다. 서버 작업은 9장 |
-| D2-1 | iOS 로 보내는 경로 | **결정(2026-11-25): FCM 하나로 두 플랫폼에 모두 보냅니다.** FCM 이 iOS 로 보낼 때는 APNs 를 거쳐 전달합니다. 서버 발송 코드는 FCM 한 갈래뿐이고, iOS 앱에는 Firebase Messaging SDK 를 추가해야 합니다 |
+| D2-1 | 푸시 발송 경로 | **결정(2026-11-25, 재결정): A안. iOS 는 지금의 APNs 직접 발송을 그대로 두고, 서버에 Android 용 FCM 발송 경로만 추가합니다.** 처음엔 «FCM 통일» 이었으나 그사이 iOS·서버에 APNs 로 푸시가 들어가 있어 바꿨습니다. iOS 앱은 고치지 않습니다 — 9장 |
 | D3 | HEIC 스티커가 일부 기기에서 안 열리면? | **결정(2026-11-25): A안, 서버에 WebP 변환본 추가(④).** Phase 0 결과 HEIC 는 투명 배경이 검게 나오고, WebP 는 정상입니다. Android 는 정지 스티커를 `.webp` 로 요청합니다. [PHASE0.md](PHASE0.md) 2-1-1, 3장 |
 | D4 | 글꼴 | **결정(2026-11-25): Pretendard 로 통일.** 제목에도 같은 서체를 쓰고 굵기로 구분합니다 |
 | D5 | applicationId | **결정(2026-11-25): `com.joonsby.travelmate`** (iOS 번들 ID 와 같음) |
@@ -314,11 +314,13 @@ feature/profile         내 정보, 설정, 계좌, 신고·차단, 탈퇴
 - [ ] **실험**: LiveKit Android 로 iOS 와 같은 방에 들어가 통화하기
 - [ ] **실험**: Google idToken 이 운영 서버 검증을 통과하는지 (설정 ① 반영 뒤)
 
-### Phase 1. 기반 (약 2주)
-- [ ] core/designsystem: 토큰, 테마(라이트·다크·시스템), TM 컴포넌트, SkyBackground, 커스텀 하단 탭(가운데 +), 시트, 스와이프 행, 새로고침
-- [ ] core/network: Retrofit DTO 전체, 오류 파싱(`error.message/details`), Authenticator(Mutex refresh), 오프라인 캐시, 상대 경로를 절대 URL 로 바꾸기
-- [ ] core/data: TokenStore(Keystore), 설정값 DataStore, ChatSocket(인증, ready, 재연결 1→30초, 포그라운드 복귀 시 재연결), TripChangeBus
-- [ ] 스플래시, 복원 실패, 로그인(카카오·Google), 심사용 로그인, 로그아웃
+### Phase 1. 기반 (약 2주) — 진행 기록은 [PHASE1.md](PHASE1.md)
+- [x] core/designsystem: 토큰, 테마(라이트·다크·시스템), TM 컴포넌트, SkyBackground, 커스텀 하단 탭(가운데 +)
+- [ ] core/designsystem 나머지: 시트, 스와이프 행, 새로고침 → 처음 쓰는 화면(Phase 2)에서 만든다
+- [x] core/network: 오류 파싱(`error.message/details`), Authenticator(Mutex refresh), 오프라인 캐시, 상대 경로를 절대 URL 로 바꾸기
+- [ ] core/network DTO: 인증·내 정보만 했다. 나머지는 각 Phase 에서 그 화면과 함께 만든다
+- [x] core/data: TokenStore(Keystore), 설정값 DataStore, ChatSocket(인증, ready, 재연결 1→30초, 포그라운드 복귀 시 재연결), TripChangeBus
+- [x] 스플래시, 복원 실패, 로그인(카카오·Google), 심사용 로그인, 로그아웃 (실제 계정 로그인 성공은 실기기에서 확인 필요)
 
 ### Phase 2. 여행 핵심 (약 3주)
 - [ ] 여행 목록, 지난 여행, 휴지통, 여행 만들기·수정(지역 자동완성, 동행 고르기)
@@ -353,13 +355,13 @@ feature/profile         내 정보, 설정, 계좌, 신고·차단, 탈퇴
 - [ ] AI 동의 게이트, AI 일정 플래너(초안 이어 보기, 사용량), AI 주변 추천과 추천 지도
 - [ ] 일정 요약 포스터 공유, 캘린더 넣기(CalendarContract)
 
-### Phase 6-1. 푸시 알림 — Android 쪽 (약 1주, 서버 9장 작업이 끝나야 함)
+### Phase 6-1. 푸시 알림 — Android 쪽 (약 1주, 서버 9-2 가 배포돼야 함)
 - [ ] Firebase 프로젝트에 Android 앱 등록, `google-services.json`
-- [ ] FCM 토큰을 등록하는 시점: 로그인 직후, 토큰이 바뀔 때(`onNewToken`). 해제하는 시점: 로그아웃, 탈퇴
-- [ ] 알림 채널 4개(채팅, 공지, 일정, 경비)와 `POST_NOTIFICATIONS` 권한 요청(Android 13 이상, 첫 로그인 뒤 안내 화면에서)
-- [ ] 알림을 누르면 해당 채팅방이나 여행 상세로 이동(앱이 꺼져 있을 때도). 지금 보고 있는 채팅방의 알림은 띄우지 않기
-- [ ] 설정 화면에 알림 항목 추가(채팅, 공지, 일정, 경비 켜기·끄기)
-- [ ] iOS 와 Android 를 섞어서 받는지 검증
+- [ ] FCM 토큰 등록: 로그인 직후, 토큰이 바뀔 때(`onNewToken`) → `POST /me/devices {token, platform: "android"}`. 해제: 로그아웃, 탈퇴 → `DELETE /me/devices/:token`
+- [ ] 알림 채널 4개(채팅, 통화, 여행 초대, 친구 — 서버 알림 종류와 같음)와 `POST_NOTIFICATIONS` 권한 요청(Android 13 이상)
+- [ ] 알림을 누르면 채팅·통화 → 그 채팅방, 초대 → 그 여행, 친구 → 친구 탭 (iOS PushManager 와 같은 규칙, 앱이 꺼져 있을 때도). 지금 보고 있는 채팅방의 알림은 띄우지 않기
+- [ ] 설정 화면 알림 항목: `GET/PUT /me/notifications {chat, call, invite, friend}`
+- [ ] iOS(APNs)와 Android(FCM)가 같은 채팅방 알림을 함께 받는지 검증
 
 ### Phase 7. 함께 쓰기 검증과 출시 (약 2주)
 - [ ] **iOS 와 Android 를 섞어 시나리오 검증**: 친구 코드 교환, 여행 초대, 일정 동시 편집 반영, 채팅(글·사진·동영상·스티커·앨범), 읽음 수, 공지, 1:1, 그룹 통화, 경비와 정산이 양쪽에서 같은 금액인지, 신고·차단
@@ -372,46 +374,39 @@ feature/profile         내 정보, 설정, 계좌, 신고·차단, 탈퇴
 
 ---
 
-## 9. 푸시 알림 — 서버와 iOS 에 필요한 작업 (승인 전에는 손대지 않음)
+## 9. 푸시 알림 — 서버에 필요한 작업 (승인 전에는 손대지 않음)
 
-### 9-1. 지금 있는 것
+**D2-1 재결정(2026-11-25): A안.** iOS 는 이미 들어가 있는 APNs 직접 발송을 그대로 두고, 서버에 **Android 용 FCM 발송 경로만 추가**합니다.
+처음에는 «FCM 으로 통일» 이었으나, 그사이 iOS(`5ca9c22 푸시 알림`)와 서버에 APNs 방식으로 푸시가 들어가 있어 바꿨습니다.
+iOS 앱은 고치지 않습니다.
+
+### 9-1. 지금 있는 것 (2026-11-25 확인)
 
 | 위치 | 내용 |
 |---|---|
-| `push_devices` (migration 018) | `token PK, user_id, environment('sandbox'\|'production'), updated_at`. APNs 를 전제로 설계했고 **platform 컬럼이 없습니다** |
-| `users.notify_chat` · `notify_notice` · `notify_itinerary` · `notify_expense` | 알림 종류별 켜기·끄기 컬럼. **읽고 쓰는 API 가 없습니다** |
-| `trip_members.muted` | 채팅방 알림 끄기. 지금은 안 읽은 배지 계산에만 씁니다 |
-| `user_blocks` | 차단. 실시간 전달에서는 이미 제외하고 있습니다 |
+| `src/services/pushService.js` | APNs 직접 발송(`node:http2`, .p8 키). 발송부는 `setPushTransport` 로 갈아 끼울 수 있고, 알림 내용(`buildPayload`)과 받을 기기 고르기는 플랫폼과 무관한 공통 코드 |
+| 알림 종류 | `chat`(새 메시지, 방 알림 끄기 반영), `call`(통화 시작), `invite`(여행 초대), `friend`(친구 요청·수락). 보낸 본인과 차단한 사람은 제외 |
+| `push_devices` (migration 018·032) | `token PK, user_id, environment('sandbox'\|'production')`. 플랫폼 구분 없음 |
+| `POST /me/devices {token, environment}` · `DELETE /me/devices/:token` | 토큰을 16진수(`^[0-9a-f]{32,200}$`)로만 받음 → **FCM 토큰은 등록되지 않음** |
+| `GET/PUT /me/notifications {chat, call, invite, friend}` | 알림 종류별 켜기·끄기. Android 도 그대로 씀 |
+| 토큰 정리 | APNs 가 410·`BadDeviceToken` 등을 돌려주면 그 토큰을 지움 |
 
 ### 9-2. 서버에 추가할 것
 
-1. **마이그레이션 032**: `push_devices` 에 `platform('ios'\|'android')` 컬럼을 추가합니다. 토큰은 두 플랫폼 모두 FCM 등록 토큰입니다(D2-1). `environment` 는 FCM 에서 쓰지 않으므로 NULL 을 허용하게 바꿉니다. 기존 테이블에는 행이 없을 것으로 보이나 운영에서 확인이 필요합니다.
-2. **기기 등록 API**: `PUT /me/push-devices {token, platform}`(같은 토큰이면 덮어씀), `DELETE /me/push-devices/:token`. 로그아웃이나 탈퇴 때도 해당 기기 토큰을 지웁니다.
-3. **알림 설정 API**: `GET/PATCH /me/notification-settings {chat, notice, itinerary, expense}`. 이미 있는 `notify_*` 컬럼을 그대로 씁니다.
-4. **발송 서비스**: FCM HTTP v1 API, 서비스 계정 키는 환경변수로. 보낼 때 아래 대상을 거르고, FCM 이 무효로 알려 준 토큰은 지웁니다.
-   - 보낸 본인
-   - 차단한 사람이 보낸 것
-   - 그 방의 알림을 끈 사람(`muted`)
-   - 그 종류의 알림을 끈 사람(`notify_*`)
-5. **보내는 시점**(컬럼 이름 기준 추정, 확정 필요):
+1. **마이그레이션**: `push_devices` 에 `platform` 컬럼(`'ios'` 기본값 \| `'android'`)을 추가하고, `environment` 는 NULL 을 허용합니다(FCM 은 쓰지 않음). 기존 행은 모두 `ios` 가 됩니다.
+2. **기기 등록 API 확장**: `POST /me/devices` 가 `{ token, platform: "android" }` 도 받게 합니다.
+   - `platform` 이 없으면 지금처럼 iOS 로 보고 16진수·`environment` 검사를 그대로 합니다 → **지금 iOS 앱은 그대로 동작**
+   - `android` 면 FCM 토큰 형식(영숫자와 `:` `-` `_`, 길이 제한)으로 검사합니다
+   - `DELETE /me/devices/:token` 은 그대로 씁니다
+3. **FCM 발송기**: FCM HTTP v1 API. 서비스 계정 키는 환경변수(GitHub Secret)로 받고, 없으면 APNs 처럼 조용히 건너뜁니다.
+   - 받을 기기를 `platform` 으로 나눠 iOS 는 기존 APNs 로, Android 는 FCM 으로 보냅니다
+   - FCM 이 `UNREGISTERED`·`INVALID_ARGUMENT`(토큰) 를 돌려주면 그 토큰을 지웁니다
+   - 메시지는 `data` 위주로 보냅니다(`type`, `tripId?`, `userId?`, 제목·본문). 앱이 채널을 골라 알림을 띄우고, 지금 보고 있는 채팅방이면 띄우지 않기 위해서입니다
+4. 알림 종류·대상 고르기·설정 API 는 **바꾸지 않습니다.**
 
-| 종류 | 계기 | 알림 내용 |
-|---|---|---|
-| chat | 메시지가 새로 생김(text, sticker, photo 등) | 보낸 사람 이름과 미리보기 |
-| notice | 공지 등록 | 방 이름과 공지 내용 |
-| itinerary | 다른 동행이 일정을 추가하거나 바꿈 | "OO님이 일정을 바꿨어요". 여러 번 바뀌면 묶어서 한 번만 |
-| expense | 다른 동행이 경비를 추가함 | 금액과 내용 |
+### 9-3. 사용자가 할 일
 
-6. 알림 데이터에 `type`, `tripId`, `messageId?` 를 담아 앱이 해당 화면을 열 수 있게 합니다.
-7. 친구 요청이나 그룹 통화 시작 알림은 설정 컬럼이 없어서 범위 밖으로 두었습니다. 필요하면 정해야 합니다.
+- Firebase 프로젝트 생성, Android 앱 등록(`com.joonsby.travelmate`, SHA-1·SHA-256) → `google-services.json`
+- 서버용 서비스 계정 키 발급 → GitHub Secret 과 서버 env 에 등록 (배포 워크플로의 optional 목록에 추가 필요)
 
-### 9-3. iOS 에 필요한 것 (운영 앱이라 이번에는 손대지 않음)
-
-- Firebase 프로젝트에 iOS 앱 등록(`GoogleService-Info.plist`), Firebase Messaging SDK(SPM) 추가
-- entitlements 에 `aps-environment` 추가. APNs 인증 키(.p8)를 발급해 Firebase 콘솔에 등록
-- APNs 기기 토큰이 아니라 **FCM 등록 토큰**을 서버에 보냄
-- 알림 권한 요청, 토큰 등록·해제 호출, 알림을 누르면 해당 화면으로 이동
-- 설정 화면에 알림 항목 추가
-- 새 빌드로 App Store 심사
-
-**순서**: 서버 9-2 를 먼저 배포합니다. 새 API 만 늘어나므로 지금의 iOS 앱은 영향을 받지 않습니다. 그다음 Android 와 iOS 가 각자 일정에 맞춰 붙입니다.
+**순서**: 서버 9-2 를 먼저 배포합니다. 바뀌는 것은 등록 API 가 받는 값이 늘고 발송 갈래가 하나 느는 것뿐이라 지금의 iOS 앱은 영향을 받지 않습니다. 그다음 Android Phase 6-1 을 붙입니다.

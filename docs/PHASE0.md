@@ -101,9 +101,9 @@ A 와 B 모두 변환은 PC 에서 한 번 하면 됩니다(Node 와 libheif 의
 
 | # | 할 일 | 필요한 곳 |
 |---|---|---|
-| 1 | 카카오 개발자 콘솔에서 기존 앱에 Android 플랫폼을 추가합니다. 패키지 `com.joonsby.travelmate` 와 키 해시(디버그·릴리스)를 등록합니다 | 카카오 로그인 |
-| 2 | GCP(iOS 와 같은 프로젝트)에서 OAuth 클라이언트 2개를 만듭니다. 하나는 Android(패키지와 SHA-1), 하나는 Web 입니다 | Google 로그인 |
-| 3 | 2번에서 만든 Web client ID 를 서버 `GOOGLE_CLIENT_ID` 에 쉼표로 추가합니다. GitHub Secret 과 서버 env 모두입니다(설정 ①) | Google 로그인 |
+| 1 | ✅ (디버그 키 해시, 2026-11-25) 카카오 개발자 콘솔에서 기존 앱(ID 1518825)의 네이티브 앱 키에 Android 정보를 추가합니다. 패키지 `com.joonsby.travelmate` 와 키 해시(디버그·릴리스)를 등록합니다 | 카카오 로그인 |
+| 2 | ✅ (디버그) GCP(iOS 와 같은 프로젝트 `740283544468`)에서 OAuth 클라이언트 2개를 만듭니다. Android 「TravelMate Android」(패키지와 디버그 SHA-1), Web 「Travelmate Web」 `740283544468-k2q3sgeomh7rrh72olofdokl9rv52pd2.apps.googleusercontent.com`. 릴리스 SHA-1 용 Android 클라이언트는 출시 때 하나 더 만듭니다 | Google 로그인 |
+| 3 | ✅ (2026-11-25, GitHub Secret·서버 env) 2번에서 만든 Web client ID 를 서버 `GOOGLE_CLIENT_ID` 에 쉼표로 추가합니다. GitHub Secret 과 서버 env 모두입니다(설정 ①) | Google 로그인 |
 | 4 | GCP 에서 Maps SDK for Android 키를 발급합니다. 패키지와 SHA-1 로 제한합니다 | 지도 |
 | 5 | Firebase 프로젝트를 만들고 Android 앱을 등록합니다(`google-services.json`) | 푸시 (Phase 6-1) |
 | 6 | Play Console 에 앱을 만들어 `com.joonsby.travelmate` 를 선점합니다 | 출시 |

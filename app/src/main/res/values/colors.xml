@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 앱 아이콘 하늘의 맨 위 색. 시작 화면 배경도 같다 (iOS LaunchBackground) -->
+    <color name="ic_launcher_background">#06566F</color>
+    <color name="splash_background">#06566F</color>
+</resources>

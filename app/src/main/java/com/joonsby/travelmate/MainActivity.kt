@@ -4,26 +4,32 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.activity.viewModels
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.getValue
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.joonsby.travelmate.core.data.Appearance
+import com.joonsby.travelmate.core.designsystem.TravelMateTheme
+import dagger.hilt.android.AndroidEntryPoint
 
-/** 앱 뼈대. 화면은 Phase 1 에서 채운다. */
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private val viewModel: RootViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MaterialTheme {
-                Surface(Modifier.fillMaxSize()) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text("여행짜자")
-                    }
-                }
+            val appearance by viewModel.appearance.collectAsStateWithLifecycle()
+            val dark = when (appearance) {
+                Appearance.System -> isSystemInDarkTheme()
+                Appearance.Light -> false
+                Appearance.Dark -> true
+            }
+            TravelMateTheme(darkTheme = dark) {
+                RootScreen(viewModel)
             }
         }
     }
